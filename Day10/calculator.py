@@ -28,7 +28,7 @@ calculator = {
     "+":add, 
     "-":subtract,
     "*":multiply,
-    "/":divide
+    "/":divide,
 }
 
 #The main part of the programe
