@@ -38,10 +38,10 @@ while is_game_on:
 
 if not is_game_on:
     # Checking for remaining states
-    remained_state =[]
-    for index in range(len(all_states)):
-        if all_states[index] not in user_correct_answer:
-            remained_state.append(all_states[index])
+    remained_state =[state for state in all_states if state not in user_correct_answer]
+    # for index in range(len(all_states)):
+    #     if all_states[index] not in user_correct_answer:
+    #         remained_state.append(all_states[index])
         
     remaining_state_dict = {
         "states":remained_state
