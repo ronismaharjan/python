@@ -1,10 +1,9 @@
 # @password generator gui made by ronish
 from tkinter import *
 from tkinter import messagebox
-import csv
 import random
 import pyperclip
-
+import json
 
 # ---------------------Password Generator---------------------
 character = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
@@ -33,51 +32,66 @@ def generate_password():
 
 # ---------------------Save Password in file------------------
 
-
 def save_file():
-    csv_path = "Day29/password.csv"
+
     website_name = website_entry.get()
     email = username_entry.get()
     password = password_entry.get()
-    data = {
-        "Website_name": website_name,
-        "Email/Username": email,
-        "Password": password,
+    data_dict = {
+        website_name: {
+            "Email/Username": email,
+            "Password": password, },
     }
+    if website_name == "" or email == "" or password == "":
+        messagebox.askretrycancel(title="Oops", message="The field is empty")
 
-    if website_name == "":
-        if email == "" and password == "":
-            messagebox.askretrycancel(
-                title="Oops", message=f'The email and website and password field is empty')
-        elif email != "" and password != "":
-            messagebox.askretrycancel(
-                title="Oops", message=f'The website field is empty')
-        elif email == "":
-            messagebox.askretrycancel(
-                title="Oops", message=f'The email and website field is empty')
-        elif password == "":
-            messagebox.askretrycancel(
-                title="Oops", message=f'The password and website field is empty')
-    elif website_name != "":
-        if email == "" and password == "":
-            messagebox.askretrycancel(
-                title="Oops", message=f'The email and password field is empty')
-        elif email == "":
-            messagebox.askretrycancel(
-                title="Oops", message=f'The email field is empty')
-        elif password == "":
-            messagebox.askretrycancel(
-                title="Oops", message=f'The password field is empty')
+    else:
+        try:
+            with open("Day29/password.json", mode="r") as data_file:
+                password_data = json.load(data_file)
+        except FileNotFoundError:
+            with open("Day29/password.json", mode="w") as data_file:
+                json.dump(data_dict, data_file, indent=4)
         else:
-            messagebox.askokcancel(
-                title="Confirm", message=f'Details\nWebsite:{website_name}\nEmail:{email}\nPassword:{password}')
-            with open(csv_path, mode="a", newline="") as file:
-                writer = csv.DictWriter(file, data)
-                if file.tell() == 0:
-                    writer.writeheader()
-                writer.writerow(data)
+            with open("Day29/password.json", mode="w") as data_file:
+                if website_name in password_data:
+                    want_to_overwrite = messagebox.askyesno(
+                        title="Already Exist", message=f"There already exist data with {website_name}.\nDo you want to overwrite?")
+                    if want_to_overwrite:
+                        password_data.update(data_dict)
+                        json.dump(password_data, data_file, indent=4)
+                    else:
+                        json.dump(password_data, data_file, indent=4)
+                else:
+                    password_data.update(data_dict)
+                    json.dump(password_data, data_file, indent=4)
+        finally:
+            data_file.close()
             website_entry.delete(0, END)
+            username_entry.delete(0, END)
             password_entry.delete(0, END)
+
+
+# -----------------------Search Website Logics------------------------------------
+
+
+def search():
+    website_entered = website_entry.get()
+    try:
+        with open("Day29/password.json", mode="r") as password_json:
+            json_data = json.load(password_json)
+            keys = [key for key in json_data]
+            if website_entered in keys:
+                website_details = f'Email: {json_data[website_entered]["Email/Username"]}\nPassword: {json_data[website_entered]["Password"]}'
+                messagebox.showinfo(title="Details", message=website_details)
+            else:
+                messagebox.showinfo(
+                    title="Details", message="No Details available")
+        password_json.close()
+
+    except FileNotFoundError:
+        messagebox.showinfo(
+            title="Details", message="No Datafile found")
 
 
 # -------------------UI Setup------------------------------------------
@@ -103,8 +117,8 @@ website_label.grid(row=1, column=0)
 # Entry for website
 website_entry = Entry()
 website_entry.focus()
-website_entry.config(width=35)
-website_entry.grid(row=1, column=1, columnspan=2)
+website_entry.config(width=30)
+website_entry.grid(row=1, column=1)
 
 # --------------------Username/Email part UI-----------------
 # Label for username / email
@@ -114,8 +128,8 @@ username_label.grid(row=2, column=0)
 
 # Entry for username/email
 username_entry = Entry()
-username_entry.config(width=35)
-username_entry.grid(row=2, column=1, columnspan=2)
+username_entry.config(width=30)
+username_entry.grid(row=2, column=1)
 
 # ------------------Password Part UI------------------------
 # Creating label for password
@@ -125,18 +139,24 @@ password_label.grid(row=3, column=0)
 
 # Entry for password_label
 password_entry = Entry()
-password_entry.config(width=21)
+password_entry.config(width=30)
 password_entry.grid(row=3, column=1)
 
 # Generate passsword button
 generate_password_button = Button()
-generate_password_button.config(text="Generate", command=generate_password)
+generate_password_button.config(
+    text="Generate", command=generate_password, width=10)
 generate_password_button.grid(row=3, column=2)
 
 # ---------------Add part UI------------------------------------------
 add_button = Button()
 add_button.config(text="Add", width=36, command=save_file)
 add_button.grid(row=4, column=1, columnspan=2)
+
+# ------------------Search Button UI-------------------------------------
+search_button = Button()
+search_button.config(text="Search", width=10, command=search)
+search_button.grid(row=1, column=2)
 
 
 window.mainloop()
